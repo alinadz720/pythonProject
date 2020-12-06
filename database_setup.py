@@ -9,8 +9,6 @@ from sqlalchemy import create_engine
 
 from db_credentials import *
 
-DATABASE_CONNECTION = f"mssql://{USERNAME}:{PASSWORD}@{SERVER}/{DATABASE}?driver={DRIVER}"
-
 engine = create_engine(DATABASE_CONNECTION)
 
 metadata = MetaData(engine)
