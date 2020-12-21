@@ -1,5 +1,5 @@
 import sys
-from sqlalchemy import Column, ForeignKey, Integer, String, MetaData, Boolean, Enum
+from sqlalchemy import Column, ForeignKey, Integer, String, MetaData, Boolean, Enum, orm
 from sqlalchemy.ext.declarative import declarative_base
 import enum
 
@@ -29,6 +29,7 @@ class ProductStatus(enum.Enum):
 
 class User(Base):
     __tablename__ = 'Users'
+<<<<<<< Updated upstream
     id = Column(Integer, primary_key=True)
     username = Column(String(64))
     firstname = Column(String(64))
@@ -37,17 +38,27 @@ class User(Base):
     password = Column(String(64))
     phone = Column(String(64))
 
+=======
+    userId = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(50), unique=True)
+    firstname = Column(String(50))
+    lastname = Column(String(50))
+    email = Column(String(50))
+    password = Column(String(50))
+    phone = Column(String(50))
+>>>>>>> Stashed changes
 
 class Product(Base):
     __tablename__ = 'Products'
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String(250), nullable=False)
+    productId = Column(Integer, primary_key=True, autoincrement=True)
+    productname = Column(String(50))
     status = Column(Enum(ProductStatus))
 
 
 class Order(Base):
     __tablename__ = 'Orders'
+<<<<<<< Updated upstream
     id = Column(Integer, primary_key=True)
     userId = Column(Integer, ForeignKey('Users.id'))
     user = relationship('Users')
@@ -55,3 +66,14 @@ class Order(Base):
     product = relationship('Products')
     status = Column(Enum(OrderStatus))
     is_complete = Column(Boolean, unique=False, default=False)
+=======
+    orderId = Column(Integer, primary_key=True, autoincrement=True)
+    userId = Column(Integer, ForeignKey('Users.userId'))
+    productId = Column(Integer, ForeignKey('Products.productId'))
+    status = Column(Enum(OrderStatus))
+    isComplete = Column(Boolean, default=False)
+    us = orm.relationship(User, foreign_keys=[userId], backref='adinfo_from', lazy='joined')
+    prod = orm.relationship(Product, foreign_keys=[productId], backref='adinfo_from', lazy='joined')
+
+Base.metadata.create_all(engine)
+>>>>>>> Stashed changes
