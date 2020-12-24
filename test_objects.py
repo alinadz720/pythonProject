@@ -19,6 +19,20 @@ product8 = Product(productname='Ebook', status=ProductStatus.available)
 
 order1 = Order(status=OrderStatus.placed, isComplete=False, us=user1, prod=product6)
 
-session.add(order1)
 
+session.add(user1)
+session.commit()
+
+
+session.add(product1)
+session.add(product2)
+session.add(product3)
+session.add(product4)
+session.add(product5)
+session.add(product6)
+session.add(product7)
+session.add(product8)
+session.commit()
+
+session.add(order1)
 session.commit()

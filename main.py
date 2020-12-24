@@ -1,9 +1,6 @@
-<<<<<<< Updated upstream
 from flask import Flask
 from wsgiref.simple_server import make_server
 
-app = Flask(__name__)
-=======
 from flask import Flask, request, abort, jsonify
 from wsgiref.simple_server import make_server
 from database_setup import *
@@ -11,6 +8,7 @@ from schemas import UserSchema, ProductSchema
 from flask_bcrypt import Bcrypt
 from marshmallow import ValidationError
 from flask_jwt_extended import JWTManager, jwt_required, jwt_optional, create_access_token, get_jwt_identity
+
 DBSession = sessionmaker(bind=engine)
 
 session = DBSession()
@@ -21,42 +19,51 @@ app.config['JWT_SECRET_KEY'] = '12345678'
 jwt = JWTManager(app)
 
 
-'''@app.route('/user', methods=['POST'])
-def create_user():
-    data = request.json
-
-    schema = UserSchema()
-    try:
-        user_data = {'userId': data['userId'], 'username': data['username'], 'firstname': data['firstname'], 'lastname': data['lastname'], 'email': data['email'], 'password': bcrypt.generate_password_hash(data['password']).decode('utf-8'), 'phone':  data['phone']}
-
-        user = schema.load(user_data)
-    except ValidationError as err:
-        return abort(400, ' '.join(str(x) for x in err.data.values()))
-    session.add(user)
-    session.commit()
-    return "User successfully created"'''
-
-
-
-
-@app.route('/user', methods=['POST'])
+@app.route('/user', methods=['POST', 'PUT'])
 @jwt_optional
 def register_user():
     data = request.json
+    if request.method == 'POST':
+        user_data = {'username': data['username'], 'firstname': data['firstname'], 'lastname': data['lastname'],
+                     'email': data['email'],
+                     'password': bcrypt.generate_password_hash(data['password']).decode('utf-8'),
+                     'phone': data['phone']}
+        user_reply = session.query(User).filter(User.username == data['username']).one_or_none()
+        if user_reply is None:
+            user = UserSchema().load(user_data)
+            session.add(user)
+            session.commit()
+        else:
+            return "This username is not available"
 
-    schema = UserSchema()
-    try:
-        user_data = {'userId': data['userId'], 'username': data['username'], 'firstname': data['firstname'], 'lastname': data['lastname'], 'email': data['email'], 'password': bcrypt.generate_password_hash(data['password']).decode('utf-8'), 'phone':  data['phone']}
+        return create_access_token(identity=user.username)
+    if request.method == 'PUT':
 
-        user = schema.load(user_data)
-    except ValidationError as err:
-        return abort(400, ' '.join(str(x) for x in err.data.values()))
-    session.add(user)
-    session.commit()
-    return create_access_token(identity=user.username)
+        if not get_jwt_identity():
+            abort(401, 'You need to log in')
+
+        user = session.query(User).filter(User.username == data['username']).one_or_none()
+
+        if user.username != get_jwt_identity():
+            abort(403, 'You can only change your own account details')
+
+        username = data['username']
+        password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+
+        email = data['email']
+
+        if user is None:
+            abort(404, 'User does not exist')
+        else:
+            user.username = username
+            user.password = password
+            user.email = email
+            session.add(user)
+            session.commit()
+            return create_access_token(identity=username)
 
 
-@app.route('/user/login')
+@app.route('/login')
 def login():
     if not request.is_json:
         return jsonify({"msg": "Missing JSON in request"}), 400
@@ -82,11 +89,12 @@ def login():
 
 
 @app.route('/product', methods=['POST', 'PUT', 'GET'])
+@jwt_optional
 def create_update_product():
     data = request.json
     if request.method == 'POST':
-        newProduct = Product(data['name'])
-        newProduct.status = data['status']
+        newProduct = Product(data['productname'])
+        newProduct.status = ProductStatus.available
         session.add(newProduct)
         session.commit()
         return f"Product {newProduct.productname} successfully created!"
@@ -119,11 +127,17 @@ def create_update_product():
 @app.route('/product/<id>', methods=['DELETE'])
 def delete_product(id):
     product = session.query(Product).filter(Product.productId == id).one_or_none()
+    order = session.query(Order).filter(Order.productId == id).first()
     if product is None:
         abort(404, 'Product not found')
+    while order:
+        session.delete(order)
+        session.commit()
+        order = session.query(Order).filter(Order.productId == id).one_or_none()
+
     session.delete(product)
     session.commit()
-    return f"Product {id} successfully deleted"
+    return f"Product {product.productname}({id}) successfully deleted"
 
 
 @app.route('/store/availability/<id>')
@@ -131,7 +145,7 @@ def check_product_inventory(id):
     product = session.query(Product).filter(Product.productId == id).one_or_none()
     if product is None:
         abort(404, 'Product not found')
-    return f"Product {product.name} is {product.status.value}"
+    return f"Product {product.productname} is {product.status.value}"
 
 
 @app.route('/order', methods=['POST'])
@@ -149,6 +163,7 @@ def place_order():
         return abort(400, 'Bad request')
 
     order = Order(user, product)
+
     session.add(order)
     session.commit()
     return f"Order was successfully placed!"
@@ -156,14 +171,14 @@ def place_order():
 
 @app.route('/store/order/<id>', methods=['GET', 'PUT', 'DELETE'])
 def single_order(id):
-    order = session.query(Order).fiter(Order.orderId == id).one_or_none()
+    order = session.query(Order).filter(Order.orderId == id).one_or_none()
     if order is None:
         abort(404)
 
     if request.method == 'GET':
-        response = f'Order for {order.product.name} has been placed by {order.user.username}. '
+        response = f'Order for {order.prod.productname} has been placed by {order.us.username}. '
         response += f'It\'s status is {order.status.value}. '
-        if order.is_complete:
+        if order.isComplete:
             response += "It's already completed"
         else:
             response += "It has not yet been completed"
@@ -187,12 +202,12 @@ def single_order(id):
         return f'Order {id} has been successfully modified'
 
     return '200'
->>>>>>> Stashed changes
 
 
 @app.route('/api/v1/hello-world-6')
 def hello():
     return 'Hello World 6'
+
 
 if __name__ == '__main__':
     app.run()

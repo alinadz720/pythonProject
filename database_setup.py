@@ -29,24 +29,14 @@ class ProductStatus(enum.Enum):
 
 class User(Base):
     __tablename__ = 'Users'
-<<<<<<< Updated upstream
-    id = Column(Integer, primary_key=True)
-    username = Column(String(64))
-    firstname = Column(String(64))
-    lastname = Column(String(64))
-    email = Column(String(64))
-    password = Column(String(64))
-    phone = Column(String(64))
-
-=======
     userId = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(50), unique=True)
     firstname = Column(String(50))
     lastname = Column(String(50))
     email = Column(String(50))
-    password = Column(String(50))
+    password = Column(String(250))
     phone = Column(String(50))
->>>>>>> Stashed changes
+
 
 class Product(Base):
     __tablename__ = 'Products'
@@ -55,18 +45,12 @@ class Product(Base):
     productname = Column(String(50))
     status = Column(Enum(ProductStatus))
 
+    def __init__(self, productname):
+        self.productname = productname
+        self.status = ProductStatus.available
 
 class Order(Base):
     __tablename__ = 'Orders'
-<<<<<<< Updated upstream
-    id = Column(Integer, primary_key=True)
-    userId = Column(Integer, ForeignKey('Users.id'))
-    user = relationship('Users')
-    productId = Column(Integer, ForeignKey('Products.id'))
-    product = relationship('Products')
-    status = Column(Enum(OrderStatus))
-    is_complete = Column(Boolean, unique=False, default=False)
-=======
     orderId = Column(Integer, primary_key=True, autoincrement=True)
     userId = Column(Integer, ForeignKey('Users.userId'))
     productId = Column(Integer, ForeignKey('Products.productId'))
@@ -75,5 +59,9 @@ class Order(Base):
     us = orm.relationship(User, foreign_keys=[userId], backref='adinfo_from', lazy='joined')
     prod = orm.relationship(Product, foreign_keys=[productId], backref='adinfo_from', lazy='joined')
 
+    def __init__(self, User, Product):
+        self.userId = User.userId
+        self.productId = Product.productId
+        self.status = OrderStatus.placed
+
 Base.metadata.create_all(engine)
->>>>>>> Stashed changes

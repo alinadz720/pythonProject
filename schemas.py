@@ -3,7 +3,7 @@ from database_setup import User, Product, Order
 
 
 class UserSchema(Schema):
-    userId = fields.Int()
+#    userId = fields.Int()
     username = fields.Str()
     firstname = fields.Str()
     lastname = fields.Str()
