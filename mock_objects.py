@@ -1,5 +1,5 @@
 from database_setup import *
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 from db_credentials import *
 
 engine = create_engine(DATABASE_CONNECTION)

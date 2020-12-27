@@ -1,8 +1,8 @@
-from flask import Flask
-from wsgiref.simple_server import make_server
-
 from flask import Flask, request, abort, jsonify
 from wsgiref.simple_server import make_server
+
+from sqlalchemy.orm import sessionmaker
+
 from database_setup import *
 from schemas import UserSchema, ProductSchema
 from flask_bcrypt import Bcrypt
@@ -36,7 +36,9 @@ def register_user():
         else:
             return "This username is not available"
 
-        return create_access_token(identity=user.username)
+        token = create_access_token(identity=user.username)
+        return jsonify(access_token=token), 200
+
     if request.method == 'PUT':
 
         if not get_jwt_identity():
@@ -60,7 +62,8 @@ def register_user():
             user.email = email
             session.add(user)
             session.commit()
-            return create_access_token(identity=username)
+            token = create_access_token(identity=username)
+            return jsonify(access_token=token), 200
 
 
 @app.route('/login')
@@ -210,8 +213,8 @@ def hello():
 
 
 if __name__ == '__main__':
-    app.run()
+    server = make_server('', 8000, app)
+    print('http://127.0.0.1:8000/api/v1/hello-world-6')
+    server.serve_forever()
 
-server = make_server('', 8000, app)
-print('http://127.0.0.1:8000/api/v1/hello-world-6')
-server.serve_forever()
+

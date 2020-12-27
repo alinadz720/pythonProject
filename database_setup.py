@@ -3,8 +3,6 @@ from sqlalchemy import Column, ForeignKey, Integer, String, MetaData, Boolean, E
 from sqlalchemy.ext.declarative import declarative_base
 import enum
 
-from sqlalchemy.orm import relationship, sessionmaker, scoped_session
-
 from sqlalchemy import create_engine
 
 from db_credentials import *
@@ -64,4 +62,4 @@ class Order(Base):
         self.productId = Product.productId
         self.status = OrderStatus.placed
 
-Base.metadata.create_all(engine)
+#Base.metadata.create_all(engine)
