@@ -46,4 +46,36 @@ class OrderTest(BaseCase):
 
         self.assertEqual(200, response_from_order.status_code)
 
+    def test_get_order(self):
+        self.test_post_order()
 
+        response = self.app.get('/store/order/1', headers={"Content-Type": "application/json"})
+
+        self.assertEqual(200, response.status_code)
+
+    def test_delete_order(self):
+        self.test_post_order()
+
+        response = self.app.delete('/store/order/1', headers={"Content-Type": "application/json"})
+
+        self.assertEqual(200, response.status_code)
+
+    def test_update_order(self):
+        self.test_post_order()
+
+        product_payload = json.dumps(
+            {
+                "productname": "beer"
+            }
+        )
+
+        self.app.post('/product', headers={"Content-Type": "application/json"}, data=product_payload)
+
+        payload = json.dumps({
+            'userId': 1,
+            'productId': 2
+        })
+
+        response = self.app.put('/store/order/1', headers={"Content-Type": "application/json"}, data=payload)
+
+        self.assertEqual(200, response.status_code)
