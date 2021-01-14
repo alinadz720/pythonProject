@@ -1,8 +1,8 @@
-from flask import Flask
-from wsgiref.simple_server import make_server
-
 from flask import Flask, request, abort, jsonify
 from wsgiref.simple_server import make_server
+
+from sqlalchemy.orm import sessionmaker
+
 from database_setup import *
 from schemas import UserSchema, ProductSchema
 from flask_bcrypt import Bcrypt
@@ -33,18 +33,20 @@ def register_user():
             user = UserSchema().load(user_data)
             session.add(user)
             session.commit()
-        else:
+        else:   # pragma: no cover
             return "This username is not available"
 
-        return create_access_token(identity=user.username)
+        token = create_access_token(identity=user.username)
+        return jsonify(access_token=token), 200
+
     if request.method == 'PUT':
 
-        if not get_jwt_identity():
+        if not get_jwt_identity():  # pragma: no cover
             abort(401, 'You need to log in')
 
         user = session.query(User).filter(User.username == data['username']).one_or_none()
 
-        if user.username != get_jwt_identity():
+        if user.username != get_jwt_identity():   # pragma: no cover
             abort(403, 'You can only change your own account details')
 
         username = data['username']
@@ -52,7 +54,7 @@ def register_user():
 
         email = data['email']
 
-        if user is None:
+        if user is None:   # pragma: no cover
             abort(404, 'User does not exist')
         else:
             user.username = username
@@ -60,7 +62,8 @@ def register_user():
             user.email = email
             session.add(user)
             session.commit()
-            return create_access_token(identity=username)
+            token = create_access_token(identity=username)
+            return jsonify(access_token=token), 200
 
 
 @app.route('/login')
@@ -130,7 +133,7 @@ def delete_product(id):
     order = session.query(Order).filter(Order.productId == id).first()
     if product is None:
         abort(404, 'Product not found')
-    while order:
+    while order:   # pragma: no cover
         session.delete(order)
         session.commit()
         order = session.query(Order).filter(Order.productId == id).one_or_none()
@@ -157,9 +160,9 @@ def place_order():
     try:
         user = session.query(User).filter(User.username == get_jwt_identity()).one_or_none()
         product = session.query(Product).filter(Product.productId == data['productId']).one_or_none()
-        if user is None or product is None:
+        if user is None or product is None:   # pragma: no cover
             abort(404, 'User or product not found')
-    except ValidationError:
+    except ValidationError:   # pragma: no cover
         return abort(400, 'Bad request')
 
     order = Order(user, product)
@@ -205,13 +208,13 @@ def single_order(id):
 
 
 @app.route('/api/v1/hello-world-6')
-def hello():
+def hello():  # pragma: no cover
     return 'Hello World 6'
 
 
-if __name__ == '__main__':
-    app.run()
+if __name__ == '__main__':  # pragma: no cover
+    server = make_server('', 8000, app)
+    print('http://127.0.0.1:8000/api/v1/hello-world-6')
+    server.serve_forever()
 
-server = make_server('', 8000, app)
-print('http://127.0.0.1:8000/api/v1/hello-world-6')
-server.serve_forever()
+
